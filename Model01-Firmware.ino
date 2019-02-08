@@ -57,6 +57,9 @@
 // Support for an LED mode that prints the keys you press in letters 4px high
 #include "Kaleidoscope-LED-AlphaSquare.h"
 
+// The LEDs under each key will have a color according to how much use they see.
+#include <Kaleidoscope-Heatmap.h>
+
 // Support for Keyboardio's internal keyboard testing mode
 #include "Kaleidoscope-Model01-TestMode.h"
 
@@ -68,6 +71,9 @@
 
 // Support for USB quirks, like changing the key state report protocol
 #include "Kaleidoscope-USB-Quirks.h"
+
+// SpaceCadet plugin to type parens easily
+#include <Kaleidoscope-SpaceCadet.h>
 
 /** This 'enum' is a list of all the macros used by the Model 01's firmware
   * The names aren't particularly important. What is important is that each
@@ -341,29 +347,29 @@ const macro_t *macroAction(uint8_t macroIndex, uint8_t keyState) {
 // Keyboardio Model 01.
 
 
-static kaleidoscope::plugin::LEDSolidColor solidRed(160, 0, 0);
-static kaleidoscope::plugin::LEDSolidColor solidOrange(140, 70, 0);
-static kaleidoscope::plugin::LEDSolidColor solidYellow(130, 100, 0);
-static kaleidoscope::plugin::LEDSolidColor solidGreen(0, 160, 0);
-static kaleidoscope::plugin::LEDSolidColor solidBlue(0, 70, 130);
-static kaleidoscope::plugin::LEDSolidColor solidIndigo(0, 0, 170);
-static kaleidoscope::plugin::LEDSolidColor solidViolet(130, 0, 120);
+static kaleidoscope::LEDSolidColor solidRed(160, 0, 0);
+static kaleidoscope::LEDSolidColor solidOrange(140, 70, 0);
+static kaleidoscope::LEDSolidColor solidYellow(130, 100, 0);
+static kaleidoscope::LEDSolidColor solidGreen(0, 160, 0);
+static kaleidoscope::LEDSolidColor solidBlue(0, 70, 130);
+static kaleidoscope::LEDSolidColor solidIndigo(0, 0, 170);
+static kaleidoscope::LEDSolidColor solidViolet(130, 0, 120);
 
 /** toggleLedsOnSuspendResume toggles the LEDs off when the host goes to sleep,
  * and turns them back on when it wakes up.
  */
-void toggleLedsOnSuspendResume(kaleidoscope::plugin::HostPowerManagement::Event event) {
+void toggleLedsOnSuspendResume(kaleidoscope::HostPowerManagement::Event event) {
   switch (event) {
-  case kaleidoscope::plugin::HostPowerManagement::Suspend:
+  case kaleidoscope::HostPowerManagement::Suspend:
+    LEDControl.paused = true;
     LEDControl.set_all_leds_to({0, 0, 0});
     LEDControl.syncLeds();
-    LEDControl.paused = true;
     break;
-  case kaleidoscope::plugin::HostPowerManagement::Resume:
+  case kaleidoscope::HostPowerManagement::Resume:
     LEDControl.paused = false;
     LEDControl.refreshAll();
     break;
-  case kaleidoscope::plugin::HostPowerManagement::Sleep:
+  case kaleidoscope::HostPowerManagement::Sleep:
     break;
   }
 }
@@ -372,7 +378,7 @@ void toggleLedsOnSuspendResume(kaleidoscope::plugin::HostPowerManagement::Event 
  * resume, and sleep) to other functions that perform action based on these
  * events.
  */
-void hostPowerManagementEventHandler(kaleidoscope::plugin::HostPowerManagement::Event event) {
+void hostPowerManagementEventHandler(kaleidoscope::HostPowerManagement::Event event) {
   toggleLedsOnSuspendResume(event);
 }
 
@@ -396,6 +402,15 @@ enum {
 static void toggleKeyboardProtocol(uint8_t combo_index) {
   USBQuirks.toggleKeyboardProtocol();
 }
+
+// colors for heatmap
+
+static const cRGB heat_colors[] PROGMEM = {
+  {  0,   0,   0}, // black
+  {255,  25,  25}, // blue
+  { 25, 255,  25}, // green
+  { 25,  25, 255}  // red
+};
 
 /** Magic combo list, a list of key combo and action pairs the firmware should
  * recognise.
@@ -438,12 +453,11 @@ KALEIDOSCOPE_INIT_PLUGINS(
   // LEDControl provides support for other LED modes
   LEDControl,
 
-  // We start with the LED effect that turns off all the LEDs.
-  LEDOff,
-
   // The rainbow effect changes the color of all of the keyboard's keys at the same time
   // running through all the colors of the rainbow.
-  LEDRainbowEffect,
+  // LEDRainbowEffect,
+
+  HeatmapEffect,
 
   // The rainbow wave effect lights up your keyboard with all the colors of a rainbow
   // and slowly moves the rainbow across your keyboard
@@ -451,20 +465,24 @@ KALEIDOSCOPE_INIT_PLUGINS(
 
   // The chase effect follows the adventure of a blue pixel which chases a red pixel across
   // your keyboard. Spoiler: the blue pixel never catches the red pixel
-  LEDChaseEffect,
+  // LEDChaseEffect,
 
   // These static effects turn your keyboard's LEDs a variety of colors
-  solidRed, solidOrange, solidYellow, solidGreen, solidBlue, solidIndigo, solidViolet,
+  solidGreen,
+  // solidRed, solidOrange, solidYellow, solidBlue, solidIndigo, solidViolet,
 
   // The breathe effect slowly pulses all of the LEDs on your keyboard
   LEDBreatheEffect,
 
   // The AlphaSquare effect prints each character you type, using your
   // keyboard's LEDs as a display
-  AlphaSquareEffect,
+  // AlphaSquareEffect,
 
   // The stalker effect lights up the keys you've pressed recently
   StalkerEffect,
+
+  // effect that turns off all the LEDs.
+  LEDOff,
 
   // The numpad plugin is responsible for lighting up the 'numpad' mode
   // with a custom LED effect
@@ -489,7 +507,9 @@ KALEIDOSCOPE_INIT_PLUGINS(
   // comfortable - or able - to do automatically, but can be useful
   // nevertheless. Such as toggling the key report protocol between Boot (used
   // by BIOSes) and Report (NKRO).
-  USBQuirks
+  USBQuirks,
+
+  SpaceCadet
 );
 
 /** The 'setup' function is one of the two standard Arduino sketch functions.
@@ -525,9 +545,29 @@ void setup() {
   // To make the keymap editable without flashing new firmware, we store
   // additional layers in EEPROM. For now, we reserve space for five layers. If
   // one wants to use these layers, just set the default layer to one in EEPROM,
-  // by using the `settings.defaultLayer` Focus command, or by using the
-  // `keymap.onlyCustom` command to use EEPROM layers only.
-  EEPROMKeymap.setup(5);
+  // by using the `settings.defaultLayer` Focus command.
+  EEPROMKeymap.setup(5, EEPROMKeymap.Mode::EXTEND);
+
+    //Set the keymap with a 250ms timeout per-key
+  //Setting is {KeyThatWasPressed, AlternativeKeyToSend, TimeoutInMS}
+  //Note: must end with the SPACECADET_MAP_END delimiter
+  static kaleidoscope::SpaceCadet::KeyBinding spacecadetmap[] = {
+    {Key_LeftShift, Key_LeftParen, 250}
+    , {Key_RightShift, Key_RightParen, 250}
+
+    , {Key_LeftGui, Key_LeftBracket, 250}
+    , {Key_RightAlt, Key_RightBracket, 250}
+    , {Key_LeftAlt, Key_RightBracket, 250}
+
+    , {Key_LeftControl, Key_LeftCurlyBracket, 250}
+    , {Key_RightControl, Key_RightCurlyBracket, 250}
+    , SPACECADET_MAP_END
+  };
+  //Set the map.
+  SpaceCadet.map = spacecadetmap;
+
+  HeatmapEffect.heat_colors = heat_colors;
+  HeatmapEffect.heat_colors_length = 4;
 }
 
 /** loop is the second of the standard Arduino sketch functions.

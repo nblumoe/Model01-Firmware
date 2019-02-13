@@ -33,7 +33,7 @@
 #include "Kaleidoscope-LEDControl.h"
 
 // Support for "Numpad" mode, which is mostly just the Numpad specific LED mode
-#include "Kaleidoscope-NumPad.h"
+// #include "Kaleidoscope-NumPad.h"
 
 // Support for the "Boot greeting" effect, which pulses the 'LED' button for 10s
 // when the keyboard is connected to a computer (or that computer is powered on)
@@ -46,7 +46,7 @@
 #include "Kaleidoscope-LEDEffect-Breathe.h"
 
 // Support for an LED mode that makes a red pixel chase a blue pixel across the keyboard
-#include "Kaleidoscope-LEDEffect-Chase.h"
+// #include "Kaleidoscope-LEDEffect-Chase.h"
 
 // Support for LED modes that pulse the keyboard's LED in a rainbow pattern
 #include "Kaleidoscope-LEDEffect-Rainbow.h"
@@ -55,7 +55,7 @@
 #include "Kaleidoscope-LED-Stalker.h"
 
 // Support for an LED mode that prints the keys you press in letters 4px high
-#include "Kaleidoscope-LED-AlphaSquare.h"
+// #include "Kaleidoscope-LED-AlphaSquare.h"
 
 // The LEDs under each key will have a color according to how much use they see.
 #include <Kaleidoscope-Heatmap.h>
@@ -67,13 +67,15 @@
 #include "Kaleidoscope-HostPowerManagement.h"
 
 // Support for magic combos (key chords that trigger an action)
-#include "Kaleidoscope-MagicCombo.h"
+// #include "Kaleidoscope-MagicCombo.h"
 
 // Support for USB quirks, like changing the key state report protocol
 #include "Kaleidoscope-USB-Quirks.h"
 
 // SpaceCadet plugin to type parens easily
-#include <Kaleidoscope-SpaceCadet.h>
+// #include <Kaleidoscope-SpaceCadet.h>
+
+//#include <Kaleidoscope-Qukeys.h>
 
 /** This 'enum' is a list of all the macros used by the Model 01's firmware
   * The names aren't particularly important. What is important is that each
@@ -178,13 +180,17 @@ KEYMAPS(
    Key_Backtick, Key_Q, Key_W, Key_E, Key_R, Key_T, Key_Tab,
    Key_PageUp,   Key_A, Key_S, Key_D, Key_F, Key_G,
    Key_PageDown, Key_Z, Key_X, Key_C, Key_V, Key_B, Key_Escape,
+   // Qukey mappings
+//   Key_LeftCurlyBracket, Key_Backspace[, Key_LeftBracket, Key_LeftParen,
    Key_LeftControl, Key_Backspace, Key_LeftGui, Key_LeftShift,
    ShiftToLayer(FUNCTION),
 
    M(MACRO_ANY),  Key_6, Key_7, Key_8,     Key_9,         Key_0,         LockLayer(NUMPAD),
    Key_Enter,     Key_Y, Key_U, Key_I,     Key_O,         Key_P,         Key_Equals,
                   Key_H, Key_J, Key_K,     Key_L,         Key_Semicolon, Key_Quote,
-   Key_RightAlt,  Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
+   Key_RightGui,  Key_N, Key_M, Key_Comma, Key_Period,    Key_Slash,     Key_Minus,
+   // Qukey mappings
+//   Key_RightParen, Key_RightBracket, Key_Spacebar, Key_RightCurlyBracket,
    Key_RightShift, Key_LeftAlt, Key_Spacebar, Key_RightControl,
    ShiftToLayer(FUNCTION)),
 
@@ -415,10 +421,10 @@ static const cRGB heat_colors[] PROGMEM = {
 /** Magic combo list, a list of key combo and action pairs the firmware should
  * recognise.
  */
-USE_MAGIC_COMBOS({.action = toggleKeyboardProtocol,
-                  // Left Fn + Esc + Shift
-                  .keys = { R3C6, R2C6, R3C7 }
-                 });
+//USE_MAGIC_COMBOS({.action = toggleKeyboardProtocol,
+//                  // Left Fn + Esc + Shift
+//                  .keys = { R3C6, R2C6, R3C7 }
+//                 });
 
 // First, tell Kaleidoscope which plugins you want to use.
 // The order can be important. For example, LED effects are
@@ -456,7 +462,6 @@ KALEIDOSCOPE_INIT_PLUGINS(
   // The rainbow effect changes the color of all of the keyboard's keys at the same time
   // running through all the colors of the rainbow.
   // LEDRainbowEffect,
-
   HeatmapEffect,
 
   // The rainbow wave effect lights up your keyboard with all the colors of a rainbow
@@ -484,9 +489,11 @@ KALEIDOSCOPE_INIT_PLUGINS(
   // effect that turns off all the LEDs.
   LEDOff,
 
+//  Qukeys,
+
   // The numpad plugin is responsible for lighting up the 'numpad' mode
   // with a custom LED effect
-  NumPad,
+//  NumPad,
 
   // The macros plugin adds support for macros
   Macros,
@@ -501,16 +508,18 @@ KALEIDOSCOPE_INIT_PLUGINS(
   // The MagicCombo plugin lets you use key combinations to trigger custom
   // actions - a bit like Macros, but triggered by pressing multiple keys at the
   // same time.
-  MagicCombo,
+//  MagicCombo,
 
   // The USBQuirks plugin lets you do some things with USB that we aren't
   // comfortable - or able - to do automatically, but can be useful
   // nevertheless. Such as toggling the key report protocol between Boot (used
   // by BIOSes) and Report (NKRO).
-  USBQuirks,
+  USBQuirks
 
-  SpaceCadet
+  //SpaceCadet
 );
+
+//const int spaceCadetTimeout = 250;
 
 /** The 'setup' function is one of the two standard Arduino sketch functions.
  * It's called when your keyboard first powers up. This is where you set up
@@ -522,10 +531,10 @@ void setup() {
 
   // While we hope to improve this in the future, the NumPad plugin
   // needs to be explicitly told which keymap layer is your numpad layer
-  NumPad.numPadLayer = NUMPAD;
+//  NumPad.numPadLayer = NUMPAD;
 
   // We configure the AlphaSquare effect to use RED letters
-  AlphaSquare.color = CRGB(255, 0, 0);
+//  AlphaSquare.color = CRGB(255, 0, 0);
 
   // We set the brightness of the rainbow effects to 150 (on a scale of 0-255)
   // This draws more than 500mA, but looks much nicer than a dimmer effect
@@ -548,23 +557,35 @@ void setup() {
   // by using the `settings.defaultLayer` Focus command.
   EEPROMKeymap.setup(5, EEPROMKeymap.Mode::EXTEND);
 
-    //Set the keymap with a 250ms timeout per-key
-  //Setting is {KeyThatWasPressed, AlternativeKeyToSend, TimeoutInMS}
-  //Note: must end with the SPACECADET_MAP_END delimiter
-  static kaleidoscope::SpaceCadet::KeyBinding spacecadetmap[] = {
-    {Key_LeftShift, Key_LeftParen, 250}
-    , {Key_RightShift, Key_RightParen, 250}
+//  //Set the keymap with timeout per-key
+//  //Setting is {KeyThatWasPressed, AlternativeKeyToSend, TimeoutInMS}
+//  //Note: must end with the SPACECADET_MAP_END delimiter
+//  static kaleidoscope::SpaceCadet::KeyBinding spacecadetmap[] = {
+//    {Key_LeftShift, Key_LeftParen, spaceCadetTimeout}
+//    , {Key_RightShift, Key_RightParen, spaceCadetTimeout}
+//
+//    , {Key_LeftGui, Key_LeftBracket, spaceCadetTimeout}
+//    , {Key_RightAlt, Key_RightBracket, spaceCadetTimeout}
+//    , {Key_LeftAlt, Key_RightBracket, spaceCadetTimeout}
+//
+//    , {Key_LeftControl, Key_LeftCurlyBracket, spaceCadetTimeout}
+//    , {Key_RightControl, Key_RightCurlyBracket, spaceCadetTimeout}
+//    , SPACECADET_MAP_END
+//  };
+//  //Set the map.
+//  SpaceCadet.map = spacecadetmap;
 
-    , {Key_LeftGui, Key_LeftBracket, 250}
-    , {Key_RightAlt, Key_RightBracket, 250}
-    , {Key_LeftAlt, Key_RightBracket, 250}
-
-    , {Key_LeftControl, Key_LeftCurlyBracket, 250}
-    , {Key_RightControl, Key_RightCurlyBracket, 250}
-    , SPACECADET_MAP_END
-  };
-  //Set the map.
-  SpaceCadet.map = spacecadetmap;
+//  QUKEYS(
+//    kaleidoscope::Qukey(0, 0, 7, Key_LeftControl),
+//    kaleidoscope::Qukey(0, 2, 7, Key_LeftGui),
+//    kaleidoscope::Qukey(0, 3, 7, Key_LeftShift),
+//
+//    kaleidoscope::Qukey(0, 3, 8, Key_RightShift),
+//    kaleidoscope::Qukey(0, 2, 8, Key_RightAlt),
+//    kaleidoscope::Qukey(0, 0, 8, Key_RightControl)
+//  )
+//  Qukeys.setTimeout(200);
+//  Qukeys.setReleaseDelay(20);
 
   HeatmapEffect.heat_colors = heat_colors;
   HeatmapEffect.heat_colors_length = 4;
